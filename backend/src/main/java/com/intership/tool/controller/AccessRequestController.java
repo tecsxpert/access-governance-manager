@@ -1,11 +1,12 @@
 package com.intership.tool.controller;
 
 import com.intership.tool.entity.AccessRequest;
+import com.intership.tool.model.Status;
 import com.intership.tool.service.AccessRequestService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-// Day 2 CRUD implementation by Rahshith
+
 @RestController
 @RequestMapping("/api/access")
 public class AccessRequestController {
@@ -16,34 +17,40 @@ public class AccessRequestController {
         this.service = service;
     }
 
-    // CREATE
     @PostMapping
     public AccessRequest create(@RequestBody AccessRequest request) {
-        return service.save(request);
+        return service.create(request);
     }
 
-    // READ ALL
     @GetMapping
     public List<AccessRequest> getAll() {
         return service.getAll();
     }
 
-    // READ BY ID
     @GetMapping("/{id}")
     public AccessRequest getById(@PathVariable Long id) {
         return service.getById(id);
     }
 
-    // UPDATE
     @PutMapping("/{id}")
-    public AccessRequest update(@PathVariable Long id, @RequestBody AccessRequest request) {
+    public AccessRequest update(@PathVariable Long id,
+                                @RequestBody AccessRequest request) {
         return service.update(id, request);
     }
 
-    // DELETE
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long id) {
+    public void delete(@PathVariable Long id) {
         service.delete(id);
-        return "Deleted successfully";
+    }
+
+    @PutMapping("/{id}/status")
+    public AccessRequest updateStatus(@PathVariable Long id,
+                                      @RequestParam String status) {
+        return service.updateStatus(id, Status.valueOf(status.toUpperCase()));
+    }
+
+    @GetMapping("/pending")
+    public List<AccessRequest> getPending() {
+        return service.getPending();
     }
 }
