@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3307/access_manager
+    username: root
+    password: Prethi@12
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update   # creates/updates table automatically
+    show-sql: true       # shows SQL queries in console
+    properties:
+      hibernate:
+        format_sql: true
