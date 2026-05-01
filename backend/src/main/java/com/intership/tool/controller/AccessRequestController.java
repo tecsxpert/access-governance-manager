@@ -2,55 +2,70 @@ package com.intership.tool.controller;
 
 import com.intership.tool.entity.AccessRequest;
 import com.intership.tool.model.Status;
-import com.intership.tool.service.AccessRequestService;
+import com.intership.tool.repository.AccessRequestRepository;
+import com.intership.tool.repository.UserRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/access")
+@RequestMapping("/access")
 public class AccessRequestController {
 
-    private final AccessRequestService service;
+    private final AccessRequestRepository repo;
+    private final UserRepository userRepo;
 
-    public AccessRequestController(AccessRequestService service) {
-        this.service = service;
+    public AccessRequestController(AccessRequestRepository repo, UserRepository userRepo) {
+        this.repo = repo;
+        this.userRepo = userRepo;
     }
 
-    @PostMapping
-    public AccessRequest create(@RequestBody AccessRequest request) {
-        return service.create(request);
+    // ✅ USER create request
+    @PostMapping("/request")
+    public AccessRequest createRequest(@RequestBody AccessRequest request) {
+        request.setStatus(Status.PENDING);
+        return repo.save(request);
     }
 
-    @GetMapping
+    // ✅ ADMIN approve
+    @PutMapping("/approve/{id}")
+    public String approve(@PathVariable Long id, @RequestParam String username) {
+
+        var user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!user.getRole().name().equals("ADMIN")) {
+            throw new RuntimeException("Only ADMIN can approve");
+        }
+
+        AccessRequest req = repo.findById(id).orElseThrow();
+        req.setStatus(Status.APPROVED);
+        repo.save(req);
+
+        return "Approved ✅";
+    }
+
+    // ❌ ADMIN reject
+    @PutMapping("/reject/{id}")
+    public String reject(@PathVariable Long id, @RequestParam String username) {
+
+        var user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!user.getRole().name().equals("ADMIN")) {
+            throw new RuntimeException("Only ADMIN can reject");
+        }
+
+        AccessRequest req = repo.findById(id).orElseThrow();
+        req.setStatus(Status.REJECTED);
+        repo.save(req);
+
+        return "Rejected ❌";
+    }
+
+    // 📄 view all
+    @GetMapping("/all")
     public List<AccessRequest> getAll() {
-        return service.getAll();
-    }
-
-    @GetMapping("/{id}")
-    public AccessRequest getById(@PathVariable Long id) {
-        return service.getById(id);
-    }
-
-    @PutMapping("/{id}")
-    public AccessRequest update(@PathVariable Long id,
-                                @RequestBody AccessRequest request) {
-        return service.update(id, request);
-    }
-
-    @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        service.delete(id);
-    }
-
-    @PutMapping("/{id}/status")
-    public AccessRequest updateStatus(@PathVariable Long id,
-                                      @RequestParam String status) {
-        return service.updateStatus(id, Status.valueOf(status.toUpperCase()));
-    }
-
-    @GetMapping("/pending")
-    public List<AccessRequest> getPending() {
-        return service.getPending();
+        return repo.findAll();
     }
 }

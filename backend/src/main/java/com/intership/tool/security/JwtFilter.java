@@ -1,17 +1,15 @@
 package com.intership.tool.security;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.List;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
@@ -30,9 +28,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String header = request.getHeader("Authorization");
 
-        // 🔍 DEBUG
-        System.out.println("HEADER: " + header);
-
         if (header != null && header.startsWith("Bearer ")) {
 
             String token = header.substring(7);
@@ -40,26 +35,23 @@ public class JwtFilter extends OncePerRequestFilter {
             try {
                 String username = jwtUtil.extractUsername(token);
 
-                // 🔥 CREATE AUTH OBJECT
-                UsernamePasswordAuthenticationToken authentication =
+                System.out.println("✅ Valid Token for user: " + username);
+
+                // 🔥 ROLE SET (temporary USER)
+                UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(
                                 username,
                                 null,
-                                Collections.emptyList()
+                                List.of(new SimpleGrantedAuthority("ROLE_USER"))
                         );
 
-                // 🔥 SET AUTH IN SPRING CONTEXT
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                System.out.println("✅ Valid Token for user: " + username);
+                SecurityContextHolder.getContext().setAuthentication(auth);
 
             } catch (Exception e) {
                 System.out.println("❌ Invalid Token");
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
-        } else {
-            System.out.println("❌ No Token Found");
         }
 
         filterChain.doFilter(request, response);
