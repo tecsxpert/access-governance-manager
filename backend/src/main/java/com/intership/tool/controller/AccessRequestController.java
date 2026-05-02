@@ -1,62 +1,52 @@
 package com.intership.tool.controller;
 
+import com.intership.tool.dto.AccessRequestDTO;
 import com.intership.tool.entity.AccessRequest;
-import com.intership.tool.model.Status;
-import com.intership.tool.repository.AccessRequestRepository;
-
-import org.springframework.web.bind.annotation.*;
-import org.springframework.security.core.context.SecurityContextHolder;
+import com.intership.tool.service.AccessRequestService;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
 @RequestMapping("/access")
 public class AccessRequestController {
 
-    private final AccessRequestRepository repo;
+    private final AccessRequestService service;
 
-    public AccessRequestController(AccessRequestRepository repo) {
-        this.repo = repo;
+    public AccessRequestController(AccessRequestService service) {
+        this.service = service;
     }
 
-    // 🔥 USER CREATE REQUEST
+    // ✅ CREATE REQUEST (USER)
     @PostMapping("/request")
-    public AccessRequest createRequest(@RequestBody AccessRequest request) {
-
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        request.setUserName(username);
-        request.setStatus(Status.PENDING);
-
-        return repo.save(request);
+    public AccessRequest create(@RequestBody AccessRequestDTO dto, Principal principal) {
+        return service.createRequest(
+                principal.getName(),
+                dto.getResourceName(),
+                dto.getAccessType()
+        );
     }
 
-    // 🔥 VIEW ALL (ANY LOGGED USER)
+    // ✅ VIEW ALL (ADMIN)
     @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
     public List<AccessRequest> getAll() {
-        return repo.findAll();
+        return service.getAllRequests();
     }
 
-    // 🔥 ADMIN ONLY APPROVE
-    @PreAuthorize("hasRole('ADMIN')")
+    // ✅ APPROVE (ADMIN)
     @PutMapping("/approve/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public AccessRequest approve(@PathVariable Long id) {
-
-        AccessRequest req = repo.findById(id).orElseThrow();
-        req.setStatus(Status.APPROVED);
-
-        return repo.save(req);
+        return service.approve(id);
     }
 
-    // 🔥 ADMIN ONLY REJECT
-    @PreAuthorize("hasRole('ADMIN')")
+    // ✅ REJECT (ADMIN)
     @PutMapping("/reject/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public AccessRequest reject(@PathVariable Long id) {
-
-        AccessRequest req = repo.findById(id).orElseThrow();
-        req.setStatus(Status.REJECTED);
-
-        return repo.save(req);
+        return service.reject(id);
     }
 }

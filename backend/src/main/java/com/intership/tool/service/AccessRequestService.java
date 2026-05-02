@@ -16,56 +16,37 @@ public class AccessRequestService {
         this.repository = repository;
     }
 
-    // ✅ CREATE
-    public AccessRequest create(AccessRequest request) {
-        // 🔥 Default status fix
-        if (request.getStatus() == null) {
-            request.setStatus(Status.PENDING);
-        }
-        return repository.save(request);
+    // ✅ CREATE REQUEST
+    public AccessRequest createRequest(String username, String resource, String type) {
+        AccessRequest req = new AccessRequest();
+        req.setUserName(username);
+        req.setResourceName(resource);
+        req.setAccessType(type);
+        req.setStatus(Status.PENDING);
+
+        return repository.save(req);
     }
 
     // ✅ GET ALL
-    public List<AccessRequest> getAll() {
+    public List<AccessRequest> getAllRequests() {
         return repository.findAll();
     }
 
-    // ✅ GET BY ID
-    public AccessRequest getById(Long id) {
-        return repository.findById(id)
+    // ✅ APPROVE
+    public AccessRequest approve(Long id) {
+        AccessRequest req = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
+
+        req.setStatus(Status.APPROVED);
+        return repository.save(req);
     }
 
-    // ✅ UPDATE FULL
-    public AccessRequest update(Long id, AccessRequest newRequest) {
-        AccessRequest existing = getById(id);
+    // ✅ REJECT
+    public AccessRequest reject(Long id) {
+        AccessRequest req = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
 
-        existing.setUserName(newRequest.getUserName());
-        existing.setResourceName(newRequest.getResourceName());
-        existing.setAccessType(newRequest.getAccessType());
-
-        // 🔥 status null ah irundha overwrite pannadhe
-        if (newRequest.getStatus() != null) {
-            existing.setStatus(newRequest.getStatus());
-        }
-
-        return repository.save(existing);
-    }
-
-    // ✅ DELETE
-    public void delete(Long id) {
-        repository.deleteById(id);
-    }
-
-    // 🔥 DAY 3 FEATURE - UPDATE STATUS
-    public AccessRequest updateStatus(Long id, Status status) {
-        AccessRequest request = getById(id);
-        request.setStatus(status);
-        return repository.save(request);
-    }
-
-    // 🔥 BONUS - GET ONLY PENDING
-    public List<AccessRequest> getPending() {
-        return repository.findByStatus(Status.PENDING);
+        req.setStatus(Status.REJECTED);
+        return repository.save(req);
     }
 }
