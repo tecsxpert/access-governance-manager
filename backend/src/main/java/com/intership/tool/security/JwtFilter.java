@@ -1,23 +1,26 @@
 package com.intership.tool.security;
 
+import com.intership.tool.entity.User;
+import com.intership.tool.repository.UserRepository;
+
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
 
-@Component
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final UserRepository userRepo;
 
-    public JwtFilter(JwtUtil jwtUtil) {
+    public JwtFilter(JwtUtil jwtUtil, UserRepository userRepo) {
         this.jwtUtil = jwtUtil;
+        this.userRepo = userRepo;
     }
 
     @Override
@@ -35,20 +38,23 @@ public class JwtFilter extends OncePerRequestFilter {
             try {
                 String username = jwtUtil.extractUsername(token);
 
-                System.out.println("✅ Valid Token for user: " + username);
+                User user = userRepo.findByUsername(username).orElse(null);
 
-                // 🔥 ROLE SET (temporary USER)
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(
-                                username,
-                                null,
-                                List.of(new SimpleGrantedAuthority("ROLE_USER"))
-                        );
+                if (user != null) {
 
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                    UsernamePasswordAuthenticationToken auth =
+                            new UsernamePasswordAuthenticationToken(
+                                    user.getUsername(),
+                                    null,
+                                    List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+                            );
+
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+
+                    System.out.println("✅ AUTHENTICATED: " + username + " ROLE: " + user.getRole());
+                }
 
             } catch (Exception e) {
-                System.out.println("❌ Invalid Token");
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
