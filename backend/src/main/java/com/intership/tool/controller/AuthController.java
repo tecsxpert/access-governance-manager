@@ -1,13 +1,11 @@
 package com.intership.tool.controller;
 
 import com.intership.tool.entity.User;
-import com.intership.tool.model.Role;
 import com.intership.tool.repository.UserRepository;
 import com.intership.tool.security.JwtUtil;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -17,27 +15,27 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
 
-    public AuthController(UserRepository userRepository, JwtUtil jwtUtil, PasswordEncoder passwordEncoder) {
+    public AuthController(UserRepository userRepository,
+                          JwtUtil jwtUtil,
+                          PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
         this.passwordEncoder = passwordEncoder;
     }
 
-    // 🔥 REGISTER
     @PostMapping("/register")
-    public Map<String, String> register(@RequestBody User user) {
+    public ResponseEntity<?> register(@RequestBody User user) {
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setRole(Role.USER); // 🔥 DEFAULT ROLE
+        user.setRole("USER"); // 🔥 IMPORTANT
 
         userRepository.save(user);
 
-        return Map.of("message", "User Registered Successfully");
+        return ResponseEntity.ok("User registered successfully");
     }
 
-    // 🔥 LOGIN
     @PostMapping("/login")
-    public Map<String, String> login(@RequestBody User user) {
+    public ResponseEntity<?> login(@RequestBody User user) {
 
         User dbUser = userRepository.findByUsername(user.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -46,8 +44,11 @@ public class AuthController {
             throw new RuntimeException("Invalid password");
         }
 
-        String token = jwtUtil.generateToken(dbUser.getUsername());
+        String token = jwtUtil.generateToken(
+                dbUser.getUsername(),
+                dbUser.getRole()
+        );
 
-        return Map.of("token", token);
+        return ResponseEntity.ok(token);
     }
 }
