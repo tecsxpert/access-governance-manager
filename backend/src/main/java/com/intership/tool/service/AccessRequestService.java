@@ -3,6 +3,7 @@ package com.intership.tool.service;
 import com.intership.tool.entity.AccessRequest;
 import com.intership.tool.model.Status;
 import com.intership.tool.repository.AccessRequestRepository;
+import com.intership.tool.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,24 +28,28 @@ public class AccessRequestService {
         return repository.save(req);
     }
 
-    // ✅ GET ALL
+    // ✅ GET ALL REQUESTS
     public List<AccessRequest> getAllRequests() {
         return repository.findAll();
     }
 
-    // ✅ APPROVE
+    // ✅ APPROVE REQUEST
     public AccessRequest approve(Long id) {
         AccessRequest req = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Request not found with id: " + id)
+                );
 
         req.setStatus(Status.APPROVED);
         return repository.save(req);
     }
 
-    // ✅ REJECT
+    // ✅ REJECT REQUEST
     public AccessRequest reject(Long id) {
         AccessRequest req = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Request not found with id: " + id)
+                );
 
         req.setStatus(Status.REJECTED);
         return repository.save(req);
