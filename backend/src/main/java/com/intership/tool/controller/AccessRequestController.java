@@ -1,52 +1,49 @@
 package com.intership.tool.controller;
 
-import com.intership.tool.dto.AccessRequestDTO;
 import com.intership.tool.entity.AccessRequest;
 import com.intership.tool.service.AccessRequestService;
-import org.springframework.security.access.prepost.PreAuthorize;
+import com.intership.tool.dto.ApiResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
 import java.util.List;
 
 @RestController
 @RequestMapping("/access")
 public class AccessRequestController {
 
-    private final AccessRequestService service;
+    @Autowired
+    private AccessRequestService service;
 
-    public AccessRequestController(AccessRequestService service) {
-        this.service = service;
-    }
-
-    // ✅ CREATE REQUEST (USER)
+    // ✅ CREATE REQUEST
     @PostMapping("/request")
-    public AccessRequest create(@RequestBody AccessRequestDTO dto, Principal principal) {
-        return service.createRequest(
-                principal.getName(),
-                dto.getResourceName(),
-                dto.getAccessType()
-        );
+    public ApiResponse<AccessRequest> createRequest(@RequestBody AccessRequest request) {
+
+        // ✅ FIX: pass full object
+        AccessRequest saved = service.createRequest(request);
+
+        return new ApiResponse<>("Request created successfully", saved);
     }
 
-    // ✅ VIEW ALL (ADMIN)
+    // ✅ GET ALL REQUESTS
     @GetMapping("/all")
-    @PreAuthorize("hasRole('ADMIN')")
-    public List<AccessRequest> getAll() {
-        return service.getAllRequests();
+    public ApiResponse<List<AccessRequest>> getAllRequests() {
+        List<AccessRequest> list = service.getAllRequests();
+        return new ApiResponse<>("All requests fetched", list);
     }
 
-    // ✅ APPROVE (ADMIN)
+    // ✅ APPROVE
     @PutMapping("/approve/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public AccessRequest approve(@PathVariable Long id) {
-        return service.approve(id);
+    public ApiResponse<AccessRequest> approve(@PathVariable Long id) {
+        AccessRequest req = service.approveRequest(id);
+        return new ApiResponse<>("Request approved", req);
     }
 
-    // ✅ REJECT (ADMIN)
+    // ✅ REJECT
     @PutMapping("/reject/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public AccessRequest reject(@PathVariable Long id) {
-        return service.reject(id);
+    public ApiResponse<AccessRequest> reject(@PathVariable Long id) {
+        AccessRequest req = service.rejectRequest(id);
+        return new ApiResponse<>("Request rejected", req);
     }
 }

@@ -3,7 +3,8 @@ package com.intership.tool.service;
 import com.intership.tool.entity.AccessRequest;
 import com.intership.tool.model.Status;
 import com.intership.tool.repository.AccessRequestRepository;
-import com.intership.tool.exception.ResourceNotFoundException;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,45 +12,33 @@ import java.util.List;
 @Service
 public class AccessRequestService {
 
-    private final AccessRequestRepository repository;
-
-    public AccessRequestService(AccessRequestRepository repository) {
-        this.repository = repository;
-    }
+    @Autowired
+    private AccessRequestRepository repository;
 
     // ✅ CREATE REQUEST
-    public AccessRequest createRequest(String username, String resource, String type) {
-        AccessRequest req = new AccessRequest();
-        req.setUserName(username);
-        req.setResourceName(resource);
-        req.setAccessType(type);
-        req.setStatus(Status.PENDING);
-
-        return repository.save(req);
+    public AccessRequest createRequest(AccessRequest request) {
+        request.setStatus(Status.PENDING);
+        return repository.save(request);
     }
 
-    // ✅ GET ALL REQUESTS
+    // ✅ GET ALL
     public List<AccessRequest> getAllRequests() {
         return repository.findAll();
     }
 
-    // ✅ APPROVE REQUEST
-    public AccessRequest approve(Long id) {
+    // ✅ APPROVE
+    public AccessRequest approveRequest(Long id) {
         AccessRequest req = repository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Request not found with id: " + id)
-                );
+                .orElseThrow(() -> new RuntimeException("Request not found"));
 
         req.setStatus(Status.APPROVED);
         return repository.save(req);
     }
 
-    // ✅ REJECT REQUEST
-    public AccessRequest reject(Long id) {
+    // ✅ REJECT
+    public AccessRequest rejectRequest(Long id) {
         AccessRequest req = repository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Request not found with id: " + id)
-                );
+                .orElseThrow(() -> new RuntimeException("Request not found"));
 
         req.setStatus(Status.REJECTED);
         return repository.save(req);
