@@ -30,36 +30,26 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String header = request.getHeader("Authorization");
 
-        // 🔍 DEBUG
-        System.out.println("HEADER: " + header);
-
         if (header != null && header.startsWith("Bearer ")) {
 
             String token = header.substring(7);
 
-            try {
-                String username = jwtUtil.extractUsername(token);
+            if (jwtUtil.validateToken(token)) {
 
-                // 🔥 CREATE AUTH OBJECT
-                UsernamePasswordAuthenticationToken authentication =
+                String username = jwtUtil.extractUsername(token);
+                String role = jwtUtil.extractRole(token);
+
+                System.out.println("User: " + username + " Role: " + role);
+
+                UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(
                                 username,
                                 null,
                                 Collections.emptyList()
                         );
 
-                // 🔥 SET AUTH IN SPRING CONTEXT
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                System.out.println("✅ Valid Token for user: " + username);
-
-            } catch (Exception e) {
-                System.out.println("❌ Invalid Token");
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
+                SecurityContextHolder.getContext().setAuthentication(auth);
             }
-        } else {
-            System.out.println("❌ No Token Found");
         }
 
         filterChain.doFilter(request, response);

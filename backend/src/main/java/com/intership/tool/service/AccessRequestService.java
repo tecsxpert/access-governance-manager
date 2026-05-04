@@ -3,6 +3,8 @@ package com.intership.tool.service;
 import com.intership.tool.entity.AccessRequest;
 import com.intership.tool.model.Status;
 import com.intership.tool.repository.AccessRequestRepository;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -10,62 +12,35 @@ import java.util.List;
 @Service
 public class AccessRequestService {
 
-    private final AccessRequestRepository repository;
+    @Autowired
+    private AccessRequestRepository repository;
 
-    public AccessRequestService(AccessRequestRepository repository) {
-        this.repository = repository;
-    }
-
-    // ✅ CREATE
-    public AccessRequest create(AccessRequest request) {
-        // 🔥 Default status fix
-        if (request.getStatus() == null) {
-            request.setStatus(Status.PENDING);
-        }
+    // ✅ CREATE REQUEST
+    public AccessRequest createRequest(AccessRequest request) {
+        request.setStatus(Status.PENDING);
         return repository.save(request);
     }
 
     // ✅ GET ALL
-    public List<AccessRequest> getAll() {
+    public List<AccessRequest> getAllRequests() {
         return repository.findAll();
     }
 
-    // ✅ GET BY ID
-    public AccessRequest getById(Long id) {
-        return repository.findById(id)
+    // ✅ APPROVE
+    public AccessRequest approveRequest(Long id) {
+        AccessRequest req = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
+
+        req.setStatus(Status.APPROVED);
+        return repository.save(req);
     }
 
-    // ✅ UPDATE FULL
-    public AccessRequest update(Long id, AccessRequest newRequest) {
-        AccessRequest existing = getById(id);
+    // ✅ REJECT
+    public AccessRequest rejectRequest(Long id) {
+        AccessRequest req = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
 
-        existing.setUserName(newRequest.getUserName());
-        existing.setResourceName(newRequest.getResourceName());
-        existing.setAccessType(newRequest.getAccessType());
-
-        // 🔥 status null ah irundha overwrite pannadhe
-        if (newRequest.getStatus() != null) {
-            existing.setStatus(newRequest.getStatus());
-        }
-
-        return repository.save(existing);
-    }
-
-    // ✅ DELETE
-    public void delete(Long id) {
-        repository.deleteById(id);
-    }
-
-    // 🔥 DAY 3 FEATURE - UPDATE STATUS
-    public AccessRequest updateStatus(Long id, Status status) {
-        AccessRequest request = getById(id);
-        request.setStatus(status);
-        return repository.save(request);
-    }
-
-    // 🔥 BONUS - GET ONLY PENDING
-    public List<AccessRequest> getPending() {
-        return repository.findByStatus(Status.PENDING);
+        req.setStatus(Status.REJECTED);
+        return repository.save(req);
     }
 }

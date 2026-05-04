@@ -3,54 +3,52 @@ package com.intership.tool.controller;
 import com.intership.tool.entity.User;
 import com.intership.tool.repository.UserRepository;
 import com.intership.tool.security.JwtUtil;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    public AuthController(UserRepository userRepository,
+                          JwtUtil jwtUtil,
+                          PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.jwtUtil = jwtUtil;
+        this.passwordEncoder = passwordEncoder;
+    }
 
-    // 🔥 REGISTER API
     @PostMapping("/register")
-    public Map<String, String> register(@RequestBody User user) {
+    public ResponseEntity<?> register(@RequestBody User user) {
 
-        System.out.println("🔥 REGISTER API HIT");
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setRole("USER"); // 🔥 IMPORTANT
 
         userRepository.save(user);
 
-        return Map.of("message", "User Registered Successfully");
+        return ResponseEntity.ok("User registered successfully");
     }
 
-    // 🔐 LOGIN API
     @PostMapping("/login")
-    public Map<String, String> login(@RequestBody User user) {
+    public ResponseEntity<?> login(@RequestBody User user) {
 
-        Optional<User> existingUser = userRepository.findByUsername(user.getUsername());
+        User dbUser = userRepository.findByUsername(user.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (existingUser.isPresent()) {
-
-            User dbUser = existingUser.get();
-
-            // 👉 password check (simple)
-            if (dbUser.getPassword().equals(user.getPassword())) {
-
-                String token = jwtUtil.generateToken(user.getUsername());
-
-                System.out.println("✅ Valid Token for user: " + user.getUsername());
-
-                return Map.of("token", token);
-            }
+        if (!passwordEncoder.matches(user.getPassword(), dbUser.getPassword())) {
+            throw new RuntimeException("Invalid password");
         }
 
-        return Map.of("error", "Invalid username or password");
+        String token = jwtUtil.generateToken(
+                dbUser.getUsername(),
+                dbUser.getRole()
+        );
+
+        return ResponseEntity.ok(token);
     }
 }
