@@ -3,6 +3,7 @@ package com.internship.accessgovernancemanager.repository;
 import com.internship.accessgovernancemanager.entity.UserAccess;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
+import java.util.Optional;
 
 public interface UserAccessRepository extends JpaRepository<UserAccess, Long> {
 
@@ -10,8 +11,10 @@ public interface UserAccessRepository extends JpaRepository<UserAccess, Long> {
     List<UserAccess> findByRole(String role);
 
     //  Find by username
-    List<UserAccess> findByUsername(String username);
+    Optional<UserAccess>findByUsername(String username);
 
     List<UserAccess> findByUsernameContaining(String username);
+
+    Optional<UserAccess> findByRefreshToken(String refreshToken);
 
 }
