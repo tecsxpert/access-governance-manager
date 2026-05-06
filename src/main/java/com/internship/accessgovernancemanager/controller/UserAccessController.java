@@ -7,13 +7,15 @@ import com.internship.accessgovernancemanager.dto.RefreshTokenRequest;
 import com.internship.accessgovernancemanager.dto.TokenResponse;
 import com.internship.accessgovernancemanager.security.JwtUtil;
 
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.lang.NonNull;
+
+// ✅ RBAC IMPORT
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -28,58 +30,65 @@ public class UserAccessController {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    private JwtUtil jwtUtil;   // ✅ FIXED
+    private JwtUtil jwtUtil;
 
-    // ✅ TEST API
+    // ✅ TEST API (PUBLIC)
     @GetMapping("/test")
     public String test() {
         return "Working";
     }
 
-    // ✅ GET ALL USERS
+    // 🔐 ONLY ADMIN
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ApiResponse<List<UserAccess>> getAllUsers() {
         return new ApiResponse<>("success", "Users fetched", service.getAllUsers());
     }
 
-    // ✅ GET USER BY ID
+    // 🔐 ADMIN + USER
+    @PreAuthorize("hasAnyRole('ADMIN','USER')")
     @GetMapping("/{id}")
     public ApiResponse<UserAccess> getUserById(@PathVariable @NonNull Long id) {
         return new ApiResponse<>("success", "User found", service.getUserById(id));
     }
 
-    // ✅ GET USERS BY ROLE
+    // 🔐 ADMIN
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/role/{role}")
     public ApiResponse<List<UserAccess>> getUsersByRole(@PathVariable String role) {
         return new ApiResponse<>("success", "Users fetched", service.getUsersByRole(role));
     }
 
-    // ✅ UPDATE USER
+    // 🔐 ADMIN
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ApiResponse<UserAccess> updateUser(@PathVariable @NonNull Long id, @RequestBody UserAccess user) {
         return new ApiResponse<>("success", "User updated", service.updateUser(id, user));
     }
 
-    // ✅ DELETE USER
+    // 🔐 ADMIN
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ApiResponse<String> deleteUser(@PathVariable @NonNull Long id) {
         service.deleteUser(id);
         return new ApiResponse<>("success", "User deleted", null);
     }
 
-    // ✅ PAGINATION
+    // 🔐 ADMIN
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/paginated")
     public ApiResponse<Page<UserAccess>> getUsers(@NonNull Pageable pageable) {
         return new ApiResponse<>("success", "Users fetched", service.getUsers(pageable));
     }
 
-    // ✅ SEARCH
+    // 🔐 ADMIN
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/search")
     public ApiResponse<List<UserAccess>> searchUsers(@RequestParam String username) {
         return new ApiResponse<>("success", "Users found", service.searchUsers(username));
     }
 
-    // ✅ LOGIN (JWT)
+    // ✅ LOGIN (PUBLIC)
     @PostMapping("/login")
     public ApiResponse<TokenResponse> login(@RequestBody UserAccess user) {
 
@@ -102,56 +111,53 @@ public class UserAccessController {
         return new ApiResponse<>("success", "Login successful", response);
     }
 
+    // ✅ REFRESH (PUBLIC)
     @PostMapping("/refresh")
     public ApiResponse<TokenResponse> refresh(@RequestBody RefreshTokenRequest refreshRequest) {
 
         String refreshToken = refreshRequest.getRefreshToken();
+
         if (refreshToken == null || refreshToken.isBlank()) {
             throw new RuntimeException("Refresh token is required");
         }
 
         UserAccess dbUser = service.findByRefreshToken(refreshToken);
+
         if (dbUser == null) {
             throw new RuntimeException("Invalid refresh token");
         }
 
         String username = jwtUtil.extractUsername(refreshToken);
-        if (!dbUser.getUsername().equals(username) || !jwtUtil.validateToken(refreshToken, username)) {
+
+        if (!dbUser.getUsername().equals(username) || !jwtUtil.validateToken(refreshToken)) {
             throw new RuntimeException("Invalid refresh token");
         }
 
         String accessToken = jwtUtil.generateAccessToken(dbUser.getUsername(), dbUser.getRole());
+
         TokenResponse response = new TokenResponse(accessToken, refreshToken);
 
         return new ApiResponse<>("success", "Access token refreshed", response);
     }
 
-    // ✅ REGISTER
+    // ✅ REGISTER (PUBLIC)
     @PostMapping("/register")
     public ApiResponse<UserAccess> register(@RequestBody UserAccess user) {
 
-        System.out.println("REGISTER HIT");
-
-        // DEBUG
-        System.out.println("USERNAME: " + user.getUsername());
-        System.out.println("PASSWORD: " + user.getPassword());
-        System.out.println("ROLE: " + user.getRole());
-        System.out.println("ACCESS: " + user.getAccessLevel());
-
-        // ✅ FIXED (no isEmpty)
         if (service.findByUsername(user.getUsername()) != null) {
             return new ApiResponse<>("failed", "User already exists", null);
         }
 
-        // normalize role
-        user.setRole(user.getRole().toUpperCase());
+        // 🔥 VERY IMPORTANT FIX
+        user.setRole("ROLE_" + user.getRole().toUpperCase());
 
         UserAccess savedUser = service.registerUser(user);
 
         return new ApiResponse<>("success", "User registered successfully", savedUser);
     }
 
-    // ✅ ADMIN TEST
+    // 🔐 ADMIN ONLY TEST
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin")
     public ApiResponse<String> adminOnly() {
         return new ApiResponse<>("success", "Admin access granted", "Only admin allowed");
