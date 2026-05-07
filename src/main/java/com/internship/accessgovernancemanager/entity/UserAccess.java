@@ -27,6 +27,10 @@ public class UserAccess {
     @Column(nullable = false)
     private String role;
 
+    @NotBlank(message = "Email is required")
+    @Column(unique = true, nullable = false)
+    private String email;
+
     @Column(name = "access_level")
     private String accessLevel;
 
@@ -84,6 +88,14 @@ public class UserAccess {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getAccessLevel() {
