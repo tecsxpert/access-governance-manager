@@ -1,84 +1,110 @@
 package com.intership.tool.controller;
 
-import com.intership.tool.entity.AccessRequest;
-import com.intership.tool.security.JwtUtil;
-import com.intership.tool.service.AccessRequestService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.intership.tool.dto.ApiResponse;
+import com.intership.tool.entity.AccessRequest;
+import com.intership.tool.service.AccessRequestService;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/access")
 public class AccessRequestController {
 
     private final AccessRequestService service;
-    private final JwtUtil jwtUtil;
 
-    public AccessRequestController(AccessRequestService service, JwtUtil jwtUtil) {
+    public AccessRequestController(AccessRequestService service) {
         this.service = service;
-        this.jwtUtil = jwtUtil;
     }
-
-    // ✅ CREATE REQUEST (USER ONLY)
+    // ✅ CREATE REQUEST (USER)
     @PostMapping("/request")
     public ResponseEntity<?> createRequest(@RequestBody AccessRequest request,
-                                           @RequestHeader("Authorization") String authHeader) {
+                                           HttpServletRequest httpRequest) {
 
-        String token = authHeader.substring(7);
-        String role = jwtUtil.extractRole(token);
-        String username = jwtUtil.extractUsername(token);
+        String username = (String) httpRequest.getAttribute("username");
+        String role = (String) httpRequest.getAttribute("role");
 
-        System.out.println("ROLE: " + role);
+        System.out.println("User: " + username + " Role: " + role);
 
-        if (role == null || !role.equalsIgnoreCase("USER")) {
-            return ResponseEntity.status(403).body("Only USER can create request");
+        if (role == null || 
+            (!role.equalsIgnoreCase("USER") && !role.equalsIgnoreCase("ROLE_USER"))) {
+
+            return ResponseEntity.status(403)
+                    .body(new ApiResponse<>("Only USER can create request", null));
         }
 
         request.setUserName(username);
 
-        return ResponseEntity.ok(service.createRequest(request));
+        return ResponseEntity.ok(
+                new ApiResponse<>("Request created",
+                        service.createRequest(request))
+        );
     }
 
-    // ✅ VIEW ALL (ADMIN ONLY)
+    // ✅ VIEW ALL (ADMIN)
     @GetMapping("/all")
-    public ResponseEntity<?> getAll(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<?> getAll(HttpServletRequest httpRequest) {
 
-        String token = authHeader.substring(7);
-        String role = jwtUtil.extractRole(token);
+        String role = (String) httpRequest.getAttribute("role");
 
-        if (role == null || !role.equalsIgnoreCase("ADMIN")) {
-            return ResponseEntity.status(403).body("Only ADMIN can view");
+        if (role == null || 
+            (!role.equalsIgnoreCase("ADMIN") && !role.equalsIgnoreCase("ROLE_ADMIN"))) {
+
+            return ResponseEntity.status(403)
+                    .body(new ApiResponse<>("Only ADMIN can view", null));
         }
 
-        return ResponseEntity.ok(service.getAllRequests());
+        return ResponseEntity.ok(
+                new ApiResponse<>("All requests",
+                        service.getAllRequests())
+        );
     }
 
-    // ✅ APPROVE (ADMIN ONLY)
+    // ✅ APPROVE
     @PutMapping("/approve/{id}")
     public ResponseEntity<?> approve(@PathVariable Long id,
-                                     @RequestHeader("Authorization") String authHeader) {
+                                     HttpServletRequest httpRequest) {
 
-        String token = authHeader.substring(7);
-        String role = jwtUtil.extractRole(token);
+        String role = (String) httpRequest.getAttribute("role");
 
-        if (role == null || !role.equalsIgnoreCase("ADMIN")) {
-            return ResponseEntity.status(403).body("Only ADMIN can approve");
+        if (role == null || 
+            (!role.equalsIgnoreCase("ADMIN") && !role.equalsIgnoreCase("ROLE_ADMIN"))) {
+
+            return ResponseEntity.status(403)
+                    .body(new ApiResponse<>("Only ADMIN can approve", null));
         }
 
-        return ResponseEntity.ok(service.approveRequest(id));
+        return ResponseEntity.ok(
+                new ApiResponse<>("Approved",
+                        service.approveRequest(id))
+        );
     }
 
-    // ✅ REJECT (ADMIN ONLY)
+    // ✅ REJECT
     @PutMapping("/reject/{id}")
     public ResponseEntity<?> reject(@PathVariable Long id,
-                                    @RequestHeader("Authorization") String authHeader) {
+                                    HttpServletRequest httpRequest) {
 
-        String token = authHeader.substring(7);
-        String role = jwtUtil.extractRole(token);
+        String role = (String) httpRequest.getAttribute("role");
 
-        if (role == null || !role.equalsIgnoreCase("ADMIN")) {
-            return ResponseEntity.status(403).body("Only ADMIN can reject");
+        if (role == null || 
+            (!role.equalsIgnoreCase("ADMIN") && !role.equalsIgnoreCase("ROLE_ADMIN"))) {
+
+            return ResponseEntity.status(403)
+                    .body(new ApiResponse<>("Only ADMIN can reject", null));
         }
 
-        return ResponseEntity.ok(service.rejectRequest(id));
+        return ResponseEntity.ok(
+                new ApiResponse<>("Rejected",
+                        service.rejectRequest(id))
+        );
     }
 }
