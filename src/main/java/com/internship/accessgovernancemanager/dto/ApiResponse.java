@@ -12,6 +12,10 @@ public class ApiResponse<T> {
         this.data = data;
     }
 
+    public static <T> ApiResponse<T> error(String message, T data) {
+        return new ApiResponse<>("failed", message, data);
+    }
+
     public String getStatus() { return status; }
     public String getMessage() { return message; }
     public T getData() { return data; }
