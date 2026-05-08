@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
@@ -9,6 +9,9 @@ function UserDashboard() {
   const [resourceName, setResourceName] = useState("");
   const [accessType, setAccessType] = useState("");
 
+  const [requests, setRequests] = useState([]);
+
+  const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
   // ✅ Logout
@@ -20,16 +23,40 @@ function UserDashboard() {
     navigate("/");
   };
 
+  // ✅ Fetch My Requests
+  const fetchMyRequests = async () => {
+
+    try {
+
+      const response = await axios.get(
+        "http://localhost:8080/access/my",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setRequests(response.data.data);
+
+    } catch (error) {
+
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+
+    fetchMyRequests();
+
+  }, []);
+
   // ✅ Create Request
   const createRequest = async () => {
 
     try {
 
-      const token = localStorage.getItem("token");
-
-      console.log("TOKEN:", token);
-
-      const response = await axios.post(
+      await axios.post(
         "http://localhost:8080/access/request",
         {
           resourceName,
@@ -43,13 +70,12 @@ function UserDashboard() {
         }
       );
 
-      console.log(response.data);
-
       alert("Access Request Created");
 
-      // ✅ clear inputs
       setResourceName("");
       setAccessType("");
+
+      fetchMyRequests();
 
     } catch (error) {
 
@@ -57,91 +83,109 @@ function UserDashboard() {
 
       console.log(error.response);
 
-      alert("Request Failed");
+      alert(error.response?.data?.message || "Request Failed");
     }
   };
 
   return (
 
-    <div
-      style={{
-        textAlign: "center",
-        marginTop: "50px",
-      }}
-    >
+    <div style={{ padding: "30px" }}>
 
       <h1>User Dashboard</h1>
 
       <h3>Welcome {role}</h3>
 
+      <button
+        onClick={logout}
+        style={{
+          padding: "10px",
+          backgroundColor: "red",
+          color: "white",
+          border: "none",
+          cursor: "pointer",
+          marginBottom: "20px",
+        }}
+      >
+        Logout
+      </button>
+
       <div
         style={{
           width: "350px",
-          margin: "30px auto",
           display: "flex",
           flexDirection: "column",
           gap: "15px",
-          backgroundColor: "#f4f4f4",
-          padding: "30px",
-          borderRadius: "10px",
+          marginBottom: "40px",
         }}
       >
 
         <input
           type="text"
-          placeholder="Enter Resource Name"
+          placeholder="Resource Name"
           value={resourceName}
-          onChange={(e) => setResourceName(e.target.value)}
-          style={{
-            padding: "12px",
-            borderRadius: "5px",
-            border: "1px solid gray",
-          }}
+          onChange={(e) =>
+            setResourceName(e.target.value)
+          }
+          style={{ padding: "10px" }}
         />
 
         <input
           type="text"
-          placeholder="Enter Access Type"
+          placeholder="Access Type"
           value={accessType}
-          onChange={(e) => setAccessType(e.target.value)}
-          style={{
-            padding: "12px",
-            borderRadius: "5px",
-            border: "1px solid gray",
-          }}
+          onChange={(e) =>
+            setAccessType(e.target.value)
+          }
+          style={{ padding: "10px" }}
         />
 
         <button
           onClick={createRequest}
           style={{
-            padding: "12px",
-            backgroundColor: "#4CAF50",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
+            padding: "10px",
             cursor: "pointer",
-            fontSize: "16px",
           }}
         >
           Create Request
         </button>
 
-        <button
-          onClick={logout}
-          style={{
-            padding: "12px",
-            backgroundColor: "red",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-            fontSize: "16px",
-          }}
-        >
-          Logout
-        </button>
-
       </div>
+
+      <h2>My Requests</h2>
+
+      <table
+        border="1"
+        cellPadding="10"
+        width="100%"
+      >
+
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Resource</th>
+            <th>Access Type</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          {requests.map((request) => (
+
+            <tr key={request.id}>
+
+              <td>{request.id}</td>
+              <td>{request.resourceName}</td>
+              <td>{request.accessType}</td>
+              <td>{request.status}</td>
+
+            </tr>
+
+          ))}
+
+        </tbody>
+
+      </table>
 
     </div>
   );
