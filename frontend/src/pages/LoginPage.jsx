@@ -18,14 +18,14 @@ function LoginPage() {
         }
       );
 
-      console.log(response.data);
+      const responseData = response.data;
+      const token = typeof responseData === "string"
+        ? responseData
+        : responseData.token;
 
-      // ✅ backend returns:
-      // response.data.data.token
-      // response.data.data.role
-
-      const token = response.data.data.token;
-      const role = response.data.data.role;
+      const role = typeof responseData === "string"
+        ? JSON.parse(atob(token.split(".")[1])).role
+        : responseData.role;
 
       // ✅ save in localStorage
       localStorage.setItem("token", token);
