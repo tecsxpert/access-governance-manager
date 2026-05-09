@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api";
 
 function LoginPage() {
 
@@ -28,13 +28,10 @@ function LoginPage() {
 
     try {
 
-      const response = await axios.post(
-        "http://localhost:8080/auth/login",
-        {
-          username,
-          password,
-        }
-      );
+      const response = await api.post("/auth/login", {
+        username,
+        password,
+      });
 
       const body = response.data.data || response.data;
       const token = body.token;

@@ -1,58 +1,69 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useEffect, useMemo, useState } from "react";
+import api, { getAuthHeaders } from "../api";
 import Navbar from "../components/NavBar";
 
 function AdminDashboard() {
 
   const [requests, setRequests] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [isLoading, setIsLoading] = useState(false);
 
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
   // ✅ Fetch Requests
   const fetchRequests = async () => {
+    setIsLoading(true);
 
     try {
+      const response = await api.get("/access/all", {
+        headers: getAuthHeaders(),
+      });
 
-      const response = await axios.get(
-        "http://localhost:8080/access/all",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      console.log(response.data);
-
-      setRequests(response.data.data);
-
+      setRequests(response.data.data || []);
     } catch (error) {
-
       console.log(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-
     fetchRequests();
-
   }, []);
+
+  const filteredRequests = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return requests.filter((request) => {
+      const matchesStatus =
+        statusFilter === "ALL" || request.status === statusFilter;
+
+      const matchesSearch =
+        !normalizedSearch ||
+        [request.id, request.userName, request.resourceName, request.accessType, request.status]
+          .some((value) =>
+            String(value || "").toLowerCase().includes(normalizedSearch)
+          );
+
+      return matchesStatus && matchesSearch;
+    });
+  }, [requests, searchTerm, statusFilter]);
+
+  const totalCount = requests.length;
+  const pendingCount = requests.filter((request) => request.status === "PENDING").length;
+  const approvedCount = requests.filter((request) => request.status === "APPROVED").length;
+  const rejectedCount = requests.filter((request) => request.status === "REJECTED").length;
 
   // ✅ Approve
   const approveRequest = async (id) => {
 
     try {
 
-      await axios.put(
-        `http://localhost:8080/access/approve/${id}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await api.put(`/access/approve/${id}`, {}, {
+        headers: getAuthHeaders(),
+      });
 
       alert("Request Approved");
 
@@ -69,15 +80,9 @@ function AdminDashboard() {
 
     try {
 
-      await axios.put(
-        `http://localhost:8080/access/reject/${id}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await api.put(`/access/reject/${id}`, {}, {
+        headers: getAuthHeaders(),
+      });
 
       alert("Request Rejected");
 
@@ -104,6 +109,45 @@ function AdminDashboard() {
           </div>
         </div>
 
+        <div className="dashboard-cards">
+          <div className="info-card">
+            <h3>Total requests</h3>
+            <p>{totalCount}</p>
+          </div>
+          <div className="info-card">
+            <h3>Pending</h3>
+            <p>{pendingCount}</p>
+          </div>
+          <div className="info-card">
+            <h3>Approved</h3>
+            <p>{approvedCount}</p>
+          </div>
+          <div className="info-card">
+            <h3>Rejected</h3>
+            <p>{rejectedCount}</p>
+          </div>
+        </div>
+
+        <div className="dashboard-controls">
+          <input
+            type="search"
+            placeholder="Search by ID, user, resource, or status"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="form-input"
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="form-input"
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="PENDING">PENDING</option>
+            <option value="APPROVED">APPROVED</option>
+            <option value="REJECTED">REJECTED</option>
+          </select>
+        </div>
+
         <div className="table-card">
           <table className="data-table">
             <thead>
@@ -117,37 +161,53 @@ function AdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {requests.map((request) => (
-                <tr key={request.id}>
-                  <td>{request.id}</td>
-                  <td>{request.userName}</td>
-                  <td>{request.resourceName}</td>
-                  <td>{request.accessType}</td>
-                  <td>
-                    <span className={`status-pill status-${request.status?.toLowerCase()}`}>
-                      {request.status}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="action-buttons">
-                      <button
-                        className="action-button approve"
-                        onClick={() => approveRequest(request.id)}
-                        type="button"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        className="action-button reject"
-                        onClick={() => rejectRequest(request.id)}
-                        type="button"
-                      >
-                        Reject
-                      </button>
-                    </div>
+              {isLoading ? (
+                <tr>
+                  <td colSpan="6" className="empty-state">
+                    Loading requests...
                   </td>
                 </tr>
-              ))}
+              ) : filteredRequests.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="empty-state">
+                    {requests.length === 0
+                      ? "No requests available yet."
+                      : "No requests match your search or filter."}
+                  </td>
+                </tr>
+              ) : (
+                filteredRequests.map((request) => (
+                  <tr key={request.id}>
+                    <td>{request.id}</td>
+                    <td>{request.userName}</td>
+                    <td>{request.resourceName}</td>
+                    <td>{request.accessType}</td>
+                    <td>
+                      <span className={`status-pill status-${request.status?.toLowerCase()}`}>
+                        {request.status}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="action-buttons">
+                        <button
+                          className="action-button approve"
+                          onClick={() => approveRequest(request.id)}
+                          type="button"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          className="action-button reject"
+                          onClick={() => rejectRequest(request.id)}
+                          type="button"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
