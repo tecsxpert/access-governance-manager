@@ -1,52 +1,49 @@
 package com.intership.tool.security;
 
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.stereotype.Component;
 
-import java.security.Key;
-import java.util.Date;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 
 @Component
 public class JwtUtil {
 
-    private final String SECRET = "mysecretkeymysecretkeymysecretkey123";
+    private final String SECRET = "thisisaverysecuresecretkeyforjwtgeneration12345";
 
-    private Key getKey() {
-        return Keys.hmacShaKeyFor(SECRET.getBytes());
-    }
-
+    // ✅ Generate Token
     public String generateToken(String username, String role) {
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", role);
+
         return Jwts.builder()
-                .setSubject(username)
-                .claim("role", role)
+                .setClaims(claims)
+                .setSubject(username)   // ✅ correct method
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
-                .signWith(getKey(), SignatureAlgorithm.HS256)
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1 hr
+                .signWith(SignatureAlgorithm.HS256, SECRET)
                 .compact();
     }
 
+    // ✅ Extract Username
     public String extractUsername(String token) {
-        return getClaims(token).getSubject();
+        return extractClaims(token).getSubject();
     }
 
+    // ✅ Extract Role
     public String extractRole(String token) {
-        return getClaims(token).get("role", String.class);
+        return (String) extractClaims(token).get("role");
     }
 
-    public boolean validateToken(String token) {
-        try {
-            getClaims(token);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    private Claims getClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getKey())
-                .build()
+    // ✅ Extract All Claims
+    private Claims extractClaims(String token) {
+        return Jwts.parser()
+                .setSigningKey(SECRET)   // ✅ correct old API
                 .parseClaimsJws(token)
                 .getBody();
     }
