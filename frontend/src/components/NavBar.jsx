@@ -1,33 +1,72 @@
-import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 
 function Navbar() {
 
-  const navigate = useNavigate();
-  const { darkMode, toggleTheme } = useTheme();
+  const {
+    darkMode,
+    toggleTheme,
+  } = useTheme();
 
-  const role = localStorage.getItem("role");
+  const role =
+    localStorage.getItem("role");
 
+  // ✅ LOGOUT
   const logout = () => {
 
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
+    localStorage.removeItem(
+      "token"
+    );
 
-    navigate("/");
+    localStorage.removeItem(
+      "role"
+    );
+
+    // ✅ FIXED BLANK SCREEN ISSUE
+    window.location.href = "/";
   };
 
   return (
-    <div className={`app-navbar ${darkMode ? 'dark' : ''}`}>
-      <h2>Access Governance Manager</h2>
+
+    <div
+      className={`app-navbar ${
+        darkMode ? "dark" : ""
+      }`}
+    >
+
+      <h2>
+        Access Governance Manager
+      </h2>
+
       <div className="navbar-actions">
-        <span className={`role-badge role-${role?.toLowerCase()}`}>{role}</span>
-        <button onClick={toggleTheme} className="secondary-button" type="button">
-          {darkMode ? 'Light' : 'Dark'}
+
+        <span
+          className={`role-badge role-${role?.toLowerCase()}`}
+        >
+          {role}
+        </span>
+
+        <button
+          onClick={toggleTheme}
+          className="secondary-button"
+          type="button"
+        >
+
+          {darkMode
+            ? "Light"
+            : "Dark"}
+
         </button>
-        <button onClick={logout} className="secondary-button" type="button">
+
+        <button
+          onClick={logout}
+          className="secondary-button"
+          type="button"
+        >
           Logout
         </button>
+
       </div>
+
     </div>
   );
 }
