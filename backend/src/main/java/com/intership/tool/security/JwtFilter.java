@@ -24,60 +24,74 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    )
             throws ServletException, IOException {
 
         String path = request.getRequestURI();
 
-        // ✅ Swagger + Auth skip
-        if (path.startsWith("/auth")
-                || path.startsWith("/swagger-ui")
-                || path.startsWith("/v3/api-docs")) {
+        // ✅ Skip auth + swagger
+        if (path.startsWith("/auth") ||
+            path.startsWith("/swagger-ui") ||
+            path.startsWith("/v3/api-docs")) {
 
             filterChain.doFilter(request, response);
             return;
         }
 
-        String authHeader = request.getHeader("Authorization");
+        String authHeader =
+                request.getHeader("Authorization");
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+        if (authHeader != null &&
+            authHeader.startsWith("Bearer ")) {
+
+            String token = authHeader.substring(7);
 
             try {
 
-                String token = authHeader.substring(7);
+                String username =
+                        jwtUtil.extractUsername(token);
 
-                String username = jwtUtil.extractUsername(token);
-                String role = jwtUtil.extractRole(token);
+                String role =
+                        jwtUtil.extractRole(token);
 
-                System.out.println("JWT USER : " + username);
-                System.out.println("JWT ROLE : " + role);
+                System.out.println(
+                        "User: " + username +
+                        " Role: " + role
+                );
 
-                // ✅ ROLE_USER / ROLE_ADMIN format
-                String springRole = role.startsWith("ROLE_")
-                        ? role
-                        : "ROLE_" + role;
+                // ✅ IMPORTANT
+                request.setAttribute(
+                        "username",
+                        username
+                );
 
-                UsernamePasswordAuthenticationToken authentication =
+                request.setAttribute(
+                        "role",
+                        role
+                );
+
+                UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(
                                 username,
                                 null,
                                 Collections.singletonList(
-                                        new SimpleGrantedAuthority(springRole)
+                                        new SimpleGrantedAuthority(role)
                                 )
                         );
 
-                SecurityContextHolder.getContext()
-                        .setAuthentication(authentication);
-
-                // ✅ controller use panna
-                request.setAttribute("username", username);
-                request.setAttribute("role", springRole);
+                SecurityContextHolder
+                        .getContext()
+                        .setAuthentication(authToken);
 
             } catch (Exception e) {
 
-                System.out.println("JWT ERROR : " + e.getMessage());
+                System.out.println(
+                        "JWT Error: " + e.getMessage()
+                );
             }
         }
 

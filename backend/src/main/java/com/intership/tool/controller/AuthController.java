@@ -1,9 +1,12 @@
 package com.intership.tool.controller;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +17,7 @@ import com.intership.tool.repository.UserRepository;
 import com.intership.tool.security.JwtUtil;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/auth")
 public class AuthController {
 
@@ -59,6 +63,10 @@ public class AuthController {
                 existingUser.getRole()
         );
 
-        return ResponseEntity.ok(token);
+        Map<String, String> responseBody = new HashMap<>();
+        responseBody.put("token", token);
+        responseBody.put("role", existingUser.getRole());
+
+        return ResponseEntity.ok(responseBody);
     }
 }

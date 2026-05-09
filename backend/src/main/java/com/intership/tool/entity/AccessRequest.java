@@ -1,7 +1,15 @@
 package com.intership.tool.entity;
 
 import com.intership.tool.model.Status;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 public class AccessRequest {
@@ -11,10 +19,15 @@ public class AccessRequest {
     private Long id;
 
     private String userName;
+    
+    @NotBlank(message = "Resource name is required")
     private String resourceName;
+    
+    @NotBlank(message = "Access type is required")
     private String accessType;
 
     @Enumerated(EnumType.STRING)
+    @NotNull(message = "Status cannot be null")
     private Status status;
 
     // 🔹 Constructors

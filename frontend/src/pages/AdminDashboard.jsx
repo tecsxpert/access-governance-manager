@@ -1,82 +1,54 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import axios from "axios";
 import { toast } from "react-toastify";
-import api, { getAuthHeaders } from "../api";
-import Navbar from "../components/NavBar";
+import "react-toastify/dist/ReactToastify.css";
+import NavBar from "../components/NavBar";
+import StatusBadge from "../components/StatusBadge";
+import RequestModal from "../components/RequestModal";
+import { useTheme } from "../context/ThemeContext";
 
 function AdminDashboard() {
-
+  const { darkMode } = useTheme();
   const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
   const itemsPerPage = 10;
 
-  const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
-
-  // ✅ Fetch Requests
-  const fetchRequests = async () => {
-    setIsLoading(true);
-
-    try {
-      const response = await api.get("/access/all", {
-        headers: getAuthHeaders(),
-      });
-
-      setRequests(response.data.data || []);
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchRequests();
-  }, []);
+  const role = localStorage.getItem("role") || "ADMIN";
 
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
-  const filteredRequests = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
+  useEffect(() => {
+    fetchRequests();
+  }, []);
 
-    return requests.filter((request) => {
-      const matchesStatus =
-        statusFilter === "ALL" || request.status === statusFilter;
-
-      const matchesSearch =
-        !normalizedSearch ||
-        [request.id, request.userName, request.resourceName, request.accessType, request.status]
-          .some((value) =>
-            String(value || "").toLowerCase().includes(normalizedSearch)
-          );
-
-      return matchesStatus && matchesSearch;
-    });
-  }, [requests, searchTerm, statusFilter]);
-
-  const totalCount = requests.length;
-  const pendingCount = requests.filter((request) => request.status === "PENDING").length;
-  const approvedCount = requests.filter((request) => request.status === "APPROVED").length;
-  const rejectedCount = requests.filter((request) => request.status === "REJECTED").length;
-
-  const lastIndex = currentPage * itemsPerPage;
-  const firstIndex = lastIndex - itemsPerPage;
-  const currentRequests = filteredRequests.slice(firstIndex, lastIndex);
-  const totalPages = Math.max(1, Math.ceil(filteredRequests.length / itemsPerPage));
-
-  // ✅ Approve
-  const approveRequest = async (id) => {
-
+  const fetchRequests = async () => {
     try {
-      await api.put(`/access/approve/${id}`, {}, {
-        headers: getAuthHeaders(),
+      const token = localStorage.getItem("token");
+      const response = await axios.get("http://localhost:8080/access/all", {
+        headers: { Authorization: `Bearer ${token}` },
       });
+      setRequests(response.data.data || []);
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to load requests");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      toast.success("Request Approved");
+  const approveRequest = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(`http://localhost:8080/access/approve/${id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Request approved successfully");
       fetchRequests();
     } catch (error) {
       console.log(error);
@@ -84,15 +56,13 @@ function AdminDashboard() {
     }
   };
 
-  // ✅ Reject
   const rejectRequest = async (id) => {
-
     try {
-      await api.put(`/access/reject/${id}`, {}, {
-        headers: getAuthHeaders(),
+      const token = localStorage.getItem("token");
+      await axios.put(`http://localhost:8080/access/reject/${id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      toast.error("Request Rejected");
+      toast.success("Request rejected successfully");
       fetchRequests();
     } catch (error) {
       console.log(error);
@@ -100,19 +70,39 @@ function AdminDashboard() {
     }
   };
 
+  const filteredRequests = useMemo(() => {
+    return requests.filter((request) => {
+      const matchesSearch =
+        request.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.resourceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.accessType.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === "ALL" || request.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [requests, searchTerm, statusFilter]);
+
+  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
+  const currentRequests = filteredRequests.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalCount = requests.length;
+  const pendingCount = requests.filter((request) => request.status === "PENDING").length;
+  const approvedCount = requests.filter((request) => request.status === "APPROVED").length;
+  const rejectedCount = requests.filter((request) => request.status === "REJECTED").length;
+
   return (
-    <div>
-      <Navbar />
-      <div className="dashboard-layout">
-        <div className="dashboard-hero">
-          <div>
-            <h1>Admin Dashboard</h1>
-            <p>Manage pending requests, approve access, and keep governance flowing smoothly.</p>
-          </div>
-          <div className="info-card">
-            <h3>Current role</h3>
-            <p>{role}</p>
-          </div>
+    <>
+      <NavBar />
+      <div className={`dashboard-layout ${darkMode ? 'dark' : ''}`}>
+        <div>
+          <h1>Admin Dashboard</h1>
+          <p>Manage pending requests, approve access, and keep governance flowing smoothly.</p>
+        </div>
+        <div className="info-card">
+          <h3>Current role</h3>
+          <p>{role}</p>
         </div>
 
         <div className="dashboard-cards">
@@ -136,8 +126,8 @@ function AdminDashboard() {
 
         <div className="dashboard-controls">
           <input
-            type="search"
-            placeholder="Search by ID, user, resource, or status"
+            type="text"
+            placeholder="Search by user, resource, or access type..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="form-input"
@@ -148,9 +138,9 @@ function AdminDashboard() {
             className="form-input"
           >
             <option value="ALL">All Statuses</option>
-            <option value="PENDING">PENDING</option>
-            <option value="APPROVED">APPROVED</option>
-            <option value="REJECTED">REJECTED</option>
+            <option value="PENDING">Pending</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
           </select>
         </div>
 
@@ -167,10 +157,10 @@ function AdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {isLoading ? (
+              {loading ? (
                 <tr>
                   <td colSpan="6" className="empty-state">
-                    Loading requests...
+                    Loading your requests...
                   </td>
                 </tr>
               ) : filteredRequests.length === 0 ? (
@@ -183,28 +173,32 @@ function AdminDashboard() {
                 </tr>
               ) : (
                 currentRequests.map((request) => (
-                  <tr key={request.id}>
+                  <tr key={request.id} onClick={() => setSelectedRequest(request)} style={{ cursor: "pointer" }}>
                     <td>{request.id}</td>
                     <td>{request.userName}</td>
                     <td>{request.resourceName}</td>
                     <td>{request.accessType}</td>
                     <td>
-                      <span className={`status-pill status-${request.status?.toLowerCase()}`}>
-                        {request.status}
-                      </span>
+                      <StatusBadge status={request.status} />
                     </td>
                     <td>
                       <div className="action-buttons">
                         <button
                           className="action-button approve"
-                          onClick={() => approveRequest(request.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            approveRequest(request.id);
+                          }}
                           type="button"
                         >
                           Approve
                         </button>
                         <button
                           className="action-button reject"
-                          onClick={() => rejectRequest(request.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            rejectRequest(request.id);
+                          }}
                           type="button"
                         >
                           Reject
@@ -231,8 +225,9 @@ function AdminDashboard() {
             </div>
           )}
         </div>
+        <RequestModal request={selectedRequest} onClose={() => setSelectedRequest(null)} />
       </div>
-    </div>
+    </>
   );
 }
 

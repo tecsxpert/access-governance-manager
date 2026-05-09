@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import api, { getAuthHeaders } from "../api";
 import Navbar from "../components/NavBar";
+import StatusBadge from "../components/StatusBadge";
+import RequestModal from "../components/RequestModal";
+import { useTheme } from "../context/ThemeContext";
 
 function UserDashboard() {
 
@@ -12,10 +15,11 @@ function UserDashboard() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
   const itemsPerPage = 10;
 
-  const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
+  const { darkMode } = useTheme();
+  const role = localStorage.getItem("role") || "USER";
 
   // ✅ Fetch My Requests
   const fetchMyRequests = async () => {
@@ -107,20 +111,14 @@ function UserDashboard() {
   };
 
   return (
-    <div>
+    <>
       <Navbar />
-      <div className="dashboard-layout">
-        <div className="dashboard-hero">
-          <div>
-            <h1>User Dashboard</h1>
-            <p>
-              Welcome back, <strong>{role}</strong>. Create access requests and track approval status.
-            </p>
-          </div>
-          <div className="info-card">
-            <h3>Create a new request</h3>
-            <p>Enter the resource and access type to submit an access governance request.</p>
-          </div>
+      <div className={`dashboard-layout ${darkMode ? 'dark' : ''}`}>
+        <div>
+          <h1>User Dashboard</h1>
+          <p>
+            Welcome back, <strong>{role}</strong>. Create access requests and track approval status.
+          </p>
         </div>
 
         <div className="dashboard-cards">
@@ -163,23 +161,29 @@ function UserDashboard() {
         </div>
 
         <div className="form-panel">
-          <input
-            type="text"
-            placeholder="Resource Name"
-            value={resourceName}
-            onChange={(e) => setResourceName(e.target.value)}
-            className="form-input"
-          />
-          <input
-            type="text"
-            placeholder="Access Type"
-            value={accessType}
-            onChange={(e) => setAccessType(e.target.value)}
-            className="form-input"
-          />
-          <button onClick={createRequest} className="primary-button" type="button">
-            Create Request
-          </button>
+          <div>
+            <h3>Create a new request</h3>
+            <p>Enter the resource and access type to submit an access governance request.</p>
+          </div>
+          <div>
+            <input
+              type="text"
+              placeholder="Resource Name"
+              value={resourceName}
+              onChange={(e) => setResourceName(e.target.value)}
+              className="form-input"
+            />
+            <input
+              type="text"
+              placeholder="Access Type"
+              value={accessType}
+              onChange={(e) => setAccessType(e.target.value)}
+              className="form-input"
+            />
+            <button onClick={createRequest} className="primary-button" type="button">
+              Create Request
+            </button>
+          </div>
         </div>
 
         <div className="table-card">
@@ -209,14 +213,12 @@ function UserDashboard() {
                 </tr>
               ) : (
                 currentRequests.map((request) => (
-                  <tr key={request.id}>
+                  <tr key={request.id} onClick={() => setSelectedRequest(request)} style={{ cursor: "pointer" }}>
                     <td>{request.id}</td>
                     <td>{request.resourceName}</td>
                     <td>{request.accessType}</td>
                     <td>
-                      <span className={`status-pill status-${request.status?.toLowerCase()}`}>
-                        {request.status}
-                      </span>
+                      <StatusBadge status={request.status} />
                     </td>
                   </tr>
                 ))
@@ -238,8 +240,9 @@ function UserDashboard() {
             </div>
           )}
         </div>
+        <RequestModal request={selectedRequest} onClose={() => setSelectedRequest(null)} />
       </div>
-    </div>
+    </>
   );
 }
 
