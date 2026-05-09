@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Daily Task Reminder</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; }
+        .header { text-align: center; color: #333; border-bottom: 2px solid #007bff; padding-bottom: 20px; }
+        .content { margin: 20px 0; line-height: 1.6; }
+        .task-list { background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .task-item { margin: 10px 0; padding: 10px; background-color: white; border-left: 4px solid #007bff; }
+        .task-title { font-weight: bold; color: #333; }
+        .task-deadline { color: #dc3545; font-size: 14px; }
+        .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
+        .reminder-badge { background-color: #007bff; color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Daily Task Reminder</h1>
+            <span class="reminder-badge" th:text="'You have ' + ${taskCount} + ' pending tasks'">Tasks</span>
+        </div>
+
+        <div class="content">
+            <p>Hello <strong th:text="${user.username}">User</strong>,</p>
+
+            <p>This is your daily reminder of pending tasks in the Access Governance Manager system. Please review and complete these tasks as soon as possible.</p>
+
+            <div class="task-list">
+                <h3>Your Pending Tasks:</h3>
+                <div th:each="task : ${tasks}" class="task-item">
+                    <div class="task-title" th:text="${task.title}">Task Title</div>
+                    <div th:if="${task.description}" th:text="${task.description}">Task Description</div>
+                    <div class="task-deadline">
+                        Deadline: <span th:text="${#temporals.format(task.deadline, 'yyyy-MM-dd HH:mm')}">Deadline</span>
+                    </div>
+                    <div>Status: <span th:text="${task.status}">Status</span></div>
+                </div>
+            </div>
+
+            <p>Please log in to the system to update your task progress or mark tasks as completed.</p>
+
+            <p>Best regards,<br>
+            Access Governance Manager Team</p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated daily reminder. Please do not reply to this email.</p>
+            <p>&copy; 2024 Access Governance Manager. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
