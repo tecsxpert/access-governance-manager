@@ -1,32 +1,52 @@
 package com.internship.accessgovernancemanager.exception;
 
-import org.springframework.web.bind.annotation.*;
-import org.springframework.http.*;
+import com.internship.accessgovernancemanager.dto.ApiResponse;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-
-import java.util.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationException(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException ex) {
+        String message = ex.getBindingResult().getFieldErrors().stream()
+            .filter(error -> "username".equals(error.getField()))
+            .map(FieldError::getDefaultMessage)
+            .findFirst()
+            .or(() -> ex.getBindingResult().getFieldErrors().stream()
+                .filter(error -> "password".equals(error.getField()))
+                .map(FieldError::getDefaultMessage)
+                .findFirst())
+            .or(() -> ex.getBindingResult().getFieldErrors().stream()
+                .filter(error -> "email".equals(error.getField()))
+                .map(FieldError::getDefaultMessage)
+                .findFirst())
+            .or(() -> ex.getBindingResult().getFieldErrors().stream()
+                .filter(error -> "role".equals(error.getField()))
+                .map(FieldError::getDefaultMessage)
+                .findFirst())
+            .or(() -> ex.getBindingResult().getFieldErrors().stream()
+                .map(FieldError::getDefaultMessage)
+                .findFirst())
+            .orElse("Validation failed");
+        return ResponseEntity.badRequest().body(ApiResponse.error(message, null));
+    }
 
-        Map<String, String> errors = new HashMap<>();
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity.status(404).body(ApiResponse.error(ex.getMessage(), null));
+    }
 
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                errors.put(error.getField(), error.getDefaultMessage())
-        );
-
-        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBadRequest(BadRequestException ex) {
+        return ResponseEntity.badRequest().body(ApiResponse.error(ex.getMessage(), null));
     }
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
-
-        Map<String, String> error = new HashMap<>();
-        error.put("error", ex.getMessage());
-
-        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);  // 401 for auth errors
+    public ResponseEntity<ApiResponse<Void>> handleRuntimeException(RuntimeException ex) {
+        return ResponseEntity.status(500).body(ApiResponse.error("Internal server error", null));
     }
 }

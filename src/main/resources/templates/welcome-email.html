@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to Access Governance Manager</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; }
+        .header { text-align: center; color: #333; border-bottom: 2px solid #007bff; padding-bottom: 20px; }
+        .content { margin: 20px 0; line-height: 1.6; }
+        .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
+        .welcome-message { font-size: 18px; color: #28a745; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎉 Welcome to Access Governance Manager!</h1>
+        </div>
+
+        <div class="content">
+            <p class="welcome-message">Hello <strong th:text="${user.username}">User</strong>,</p>
+
+            <p>Welcome to the Access Governance Manager system! Your account has been successfully created and you now have access to manage user permissions and access controls.</p>
+
+            <p><strong>Your Details:</strong></p>
+            <ul>
+                <li><strong>Username:</strong> <span th:text="${user.username}">username</span></li>
+                <li><strong>Role:</strong> <span th:text="${user.role}">role</span></li>
+                <li><strong>Email:</strong> <span th:text="${user.email}">email</span></li>
+            </ul>
+
+            <p>You can now log in to the system and start managing access permissions. If you have any questions, please contact your system administrator.</p>
+
+            <p>Best regards,<br>
+            Access Governance Manager Team</p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated message. Please do not reply to this email.</p>
+            <p>&copy; 2024 Access Governance Manager. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

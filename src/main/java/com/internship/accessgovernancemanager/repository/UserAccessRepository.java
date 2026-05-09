@@ -13,6 +13,9 @@ public interface UserAccessRepository extends JpaRepository<UserAccess, Long> {
     //  Find by username
     Optional<UserAccess>findByUsername(String username);
 
+    //  Find by email
+    Optional<UserAccess> findByEmail(String email);
+
     List<UserAccess> findByUsernameContaining(String username);
 
     Optional<UserAccess> findByRefreshToken(String refreshToken);
