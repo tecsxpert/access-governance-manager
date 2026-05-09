@@ -1,24 +1,15 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import Navbar from "../components/NavBar";
 
 function AdminDashboard() {
-
-  const navigate = useNavigate();
 
   const [requests, setRequests] = useState([]);
 
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
-  const logout = () => {
-
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-
-    navigate("/");
-  };
-
+  // ✅ Fetch Requests
   const fetchRequests = async () => {
 
     try {
@@ -48,6 +39,7 @@ function AdminDashboard() {
 
   }, []);
 
+  // ✅ Approve
   const approveRequest = async (id) => {
 
     try {
@@ -72,6 +64,7 @@ function AdminDashboard() {
     }
   };
 
+  // ✅ Reject
   const rejectRequest = async (id) => {
 
     try {
@@ -97,83 +90,68 @@ function AdminDashboard() {
   };
 
   return (
+    <div>
+      <Navbar />
+      <div className="dashboard-layout">
+        <div className="dashboard-hero">
+          <div>
+            <h1>Admin Dashboard</h1>
+            <p>Manage pending requests, approve access, and keep governance flowing smoothly.</p>
+          </div>
+          <div className="info-card">
+            <h3>Current role</h3>
+            <p>{role}</p>
+          </div>
+        </div>
 
-    <div style={{ padding: "30px" }}>
-
-      <h1>Admin Dashboard</h1>
-
-      <h3>Welcome {role}</h3>
-
-      <button
-        onClick={logout}
-        style={{
-          padding: "10px",
-          backgroundColor: "red",
-          color: "white",
-          border: "none",
-          cursor: "pointer",
-          marginBottom: "20px",
-        }}
-      >
-        Logout
-      </button>
-
-      <table
-        border="1"
-        cellPadding="10"
-        width="100%"
-      >
-
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>User</th>
-            <th>Resource</th>
-            <th>Access Type</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-
-        <tbody>
-
-          {requests.map((request) => (
-
-            <tr key={request.id}>
-
-              <td>{request.id}</td>
-              <td>{request.userName}</td>
-              <td>{request.resourceName}</td>
-              <td>{request.accessType}</td>
-              <td>{request.status}</td>
-
-              <td>
-
-                <button
-                  onClick={() => approveRequest(request.id)}
-                >
-                  Approve
-                </button>
-
-                <button
-                  onClick={() => rejectRequest(request.id)}
-                  style={{
-                    marginLeft: "10px",
-                  }}
-                >
-                  Reject
-                </button>
-
-              </td>
-
-            </tr>
-
-          ))}
-
-        </tbody>
-
-      </table>
-
+        <div className="table-card">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>User</th>
+                <th>Resource</th>
+                <th>Access Type</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {requests.map((request) => (
+                <tr key={request.id}>
+                  <td>{request.id}</td>
+                  <td>{request.userName}</td>
+                  <td>{request.resourceName}</td>
+                  <td>{request.accessType}</td>
+                  <td>
+                    <span className={`status-pill status-${request.status?.toLowerCase()}`}>
+                      {request.status}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="action-buttons">
+                      <button
+                        className="action-button approve"
+                        onClick={() => approveRequest(request.id)}
+                        type="button"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        className="action-button reject"
+                        onClick={() => rejectRequest(request.id)}
+                        type="button"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

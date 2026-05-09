@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import Navbar from "../components/NavBar";
 
 function UserDashboard() {
-
-  const navigate = useNavigate();
 
   const [resourceName, setResourceName] = useState("");
   const [accessType, setAccessType] = useState("");
@@ -13,15 +11,6 @@ function UserDashboard() {
 
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
-
-  // ✅ Logout
-  const logout = () => {
-
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-
-    navigate("/");
-  };
 
   // ✅ Fetch My Requests
   const fetchMyRequests = async () => {
@@ -83,110 +72,77 @@ function UserDashboard() {
 
       console.log(error.response);
 
-      alert(error.response?.data?.message || "Request Failed");
+      alert(
+        error.response?.data?.message ||
+        "Request Failed"
+      );
     }
   };
 
   return (
+    <div>
+      <Navbar />
+      <div className="dashboard-layout">
+        <div className="dashboard-hero">
+          <div>
+            <h1>User Dashboard</h1>
+            <p>
+              Welcome back, <strong>{role}</strong>. Create access requests and track approval status.
+            </p>
+          </div>
+          <div className="info-card">
+            <h3>Create a new request</h3>
+            <p>Enter the resource and access type to submit an access governance request.</p>
+          </div>
+        </div>
 
-    <div style={{ padding: "30px" }}>
+        <div className="form-panel">
+          <input
+            type="text"
+            placeholder="Resource Name"
+            value={resourceName}
+            onChange={(e) => setResourceName(e.target.value)}
+            className="form-input"
+          />
+          <input
+            type="text"
+            placeholder="Access Type"
+            value={accessType}
+            onChange={(e) => setAccessType(e.target.value)}
+            className="form-input"
+          />
+          <button onClick={createRequest} className="primary-button" type="button">
+            Create Request
+          </button>
+        </div>
 
-      <h1>User Dashboard</h1>
-
-      <h3>Welcome {role}</h3>
-
-      <button
-        onClick={logout}
-        style={{
-          padding: "10px",
-          backgroundColor: "red",
-          color: "white",
-          border: "none",
-          cursor: "pointer",
-          marginBottom: "20px",
-        }}
-      >
-        Logout
-      </button>
-
-      <div
-        style={{
-          width: "350px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "15px",
-          marginBottom: "40px",
-        }}
-      >
-
-        <input
-          type="text"
-          placeholder="Resource Name"
-          value={resourceName}
-          onChange={(e) =>
-            setResourceName(e.target.value)
-          }
-          style={{ padding: "10px" }}
-        />
-
-        <input
-          type="text"
-          placeholder="Access Type"
-          value={accessType}
-          onChange={(e) =>
-            setAccessType(e.target.value)
-          }
-          style={{ padding: "10px" }}
-        />
-
-        <button
-          onClick={createRequest}
-          style={{
-            padding: "10px",
-            cursor: "pointer",
-          }}
-        >
-          Create Request
-        </button>
-
+        <div className="table-card">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Resource</th>
+                <th>Access Type</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {requests.map((request) => (
+                <tr key={request.id}>
+                  <td>{request.id}</td>
+                  <td>{request.resourceName}</td>
+                  <td>{request.accessType}</td>
+                  <td>
+                    <span className={`status-pill status-${request.status?.toLowerCase()}`}>
+                      {request.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-
-      <h2>My Requests</h2>
-
-      <table
-        border="1"
-        cellPadding="10"
-        width="100%"
-      >
-
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Resource</th>
-            <th>Access Type</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-
-        <tbody>
-
-          {requests.map((request) => (
-
-            <tr key={request.id}>
-
-              <td>{request.id}</td>
-              <td>{request.resourceName}</td>
-              <td>{request.accessType}</td>
-              <td>{request.status}</td>
-
-            </tr>
-
-          ))}
-
-        </tbody>
-
-      </table>
-
     </div>
   );
 }

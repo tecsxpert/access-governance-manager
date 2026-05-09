@@ -1,10 +1,28 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
 function LoginPage() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
+  // ✅ Auto redirect if already logged in
+  useEffect(() => {
+
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+
+    if (token && role === "ADMIN") {
+
+      window.location.href = "/admin";
+    }
+
+    if (token && role === "USER") {
+
+      window.location.href = "/user";
+    }
+
+  }, []);
 
   const handleLogin = async () => {
 
@@ -18,23 +36,16 @@ function LoginPage() {
         }
       );
 
-      const responseData = response.data;
-      const token = typeof responseData === "string"
-        ? responseData
-        : responseData.token;
+      const body = response.data.data || response.data;
+      const token = body.token;
+      const role = body.role;
 
-      const role = typeof responseData === "string"
-        ? JSON.parse(atob(token.split(".")[1])).role
-        : responseData.role;
-
-      // ✅ save in localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
 
       alert("Login Success");
 
-      // ✅ redirect based on role
-      if (role === "ADMIN" || role === "ROLE_ADMIN") {
+      if (role === "ADMIN") {
 
         window.location.href = "/admin";
 
@@ -45,82 +56,42 @@ function LoginPage() {
 
     } catch (error) {
 
-      console.error(error);
+      console.log(error);
 
       alert("Login Failed");
     }
   };
 
   return (
+    <div className="auth-page">
+      <div className="auth-card">
+        <h2 className="form-title">Welcome Back</h2>
+        <p className="form-subtitle">
+          Sign in to manage access requests and review governance activity.
+        </p>
 
-    <div
-      style={{
-        height: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#f4f4f4",
-      }}
-    >
+        <div className="form-field">
+          <input
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="form-input"
+          />
 
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          width: "350px",
-          gap: "15px",
-          backgroundColor: "white",
-          padding: "40px",
-          borderRadius: "10px",
-          boxShadow: "0px 0px 10px rgba(0,0,0,0.2)",
-        }}
-      >
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="form-input"
+          />
 
-        <h2 style={{ textAlign: "center" }}>
-          Access Governance Manager
-        </h2>
-
-        <input
-          type="text"
-          placeholder="Enter Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          style={{
-            padding: "12px",
-            borderRadius: "5px",
-            border: "1px solid gray",
-          }}
-        />
-
-        <input
-          type="password"
-          placeholder="Enter Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{
-            padding: "12px",
-            borderRadius: "5px",
-            border: "1px solid gray",
-          }}
-        />
-
-        <button
-          onClick={handleLogin}
-          style={{
-            padding: "12px",
-            border: "none",
-            borderRadius: "5px",
-            backgroundColor: "#4CAF50",
-            color: "white",
-            cursor: "pointer",
-            fontSize: "16px",
-          }}
-        >
-          Login
-        </button>
-
+          <button onClick={handleLogin} className="primary-button" type="button">
+            Login
+          </button>
+        </div>
       </div>
-
     </div>
   );
 }

@@ -1,16 +1,51 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import LoginPage from "./pages/LoginPage";
 import UserDashboard from "./pages/UserDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 
+import ProtectedRoute from "./components/ProtectedRoute";
+
 function App() {
+
   return (
+
     <BrowserRouter>
+
       <Routes>
-        <Route path="/" element={<LoginPage />} />
-        <Route path="/user" element={<UserDashboard />} />
-        <Route path="/admin" element={<AdminDashboard />} />
+
+        {/* ✅ LOGIN */}
+        <Route
+          path="/"
+          element={<LoginPage />}
+        />
+
+        {/* ✅ USER */}
+        <Route
+          path="/user"
+          element={
+            <ProtectedRoute role="USER">
+
+              <UserDashboard />
+
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ✅ ADMIN */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute role="ADMIN">
+
+              <AdminDashboard />
+
+            </ProtectedRoute>
+          }
+        />
+
       </Routes>
+
     </BrowserRouter>
   );
 }
