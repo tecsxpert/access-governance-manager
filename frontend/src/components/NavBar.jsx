@@ -18,7 +18,7 @@ function Navbar() {
     <div className="app-navbar">
       <h2>Access Governance Manager</h2>
       <div className="navbar-actions">
-        <span>{role}</span>
+        <span className={`role-badge role-${role?.toLowerCase()}`}>{role}</span>
         <button onClick={logout} className="secondary-button" type="button">
           Logout
         </button>

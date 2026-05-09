@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import api, { getAuthHeaders } from "../api";
 import Navbar from "../components/NavBar";
 
@@ -9,7 +10,9 @@ function UserDashboard() {
   const [requests, setRequests] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const itemsPerPage = 10;
 
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
@@ -35,6 +38,10 @@ function UserDashboard() {
     fetchMyRequests();
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
   const filteredRequests = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
@@ -58,6 +65,11 @@ function UserDashboard() {
   const approvedCount = requests.filter((request) => request.status === "APPROVED").length;
   const rejectedCount = requests.filter((request) => request.status === "REJECTED").length;
 
+  const lastIndex = currentPage * itemsPerPage;
+  const firstIndex = lastIndex - itemsPerPage;
+  const currentRequests = filteredRequests.slice(firstIndex, lastIndex);
+  const totalPages = Math.max(1, Math.ceil(filteredRequests.length / itemsPerPage));
+
   // ✅ Create Request
   const createRequest = async () => {
 
@@ -77,7 +89,7 @@ function UserDashboard() {
         }
       );
 
-      alert("Access Request Created");
+      toast.success("Access Request Created");
 
       setResourceName("");
       setAccessType("");
@@ -90,10 +102,7 @@ function UserDashboard() {
 
       console.log(error.response);
 
-      alert(
-        error.response?.data?.message ||
-        "Request Failed"
-      );
+      toast.error(error.response?.data?.message || "Request Failed");
     }
   };
 
@@ -199,7 +208,7 @@ function UserDashboard() {
                   </td>
                 </tr>
               ) : (
-                filteredRequests.map((request) => (
+                currentRequests.map((request) => (
                   <tr key={request.id}>
                     <td>{request.id}</td>
                     <td>{request.resourceName}</td>
@@ -214,6 +223,20 @@ function UserDashboard() {
               )}
             </tbody>
           </table>
+          {filteredRequests.length > itemsPerPage && (
+            <div className="pagination-controls">
+              {[...Array(totalPages)].map((_, index) => (
+                <button
+                  key={index}
+                  className={`pagination-button ${currentPage === index + 1 ? "active" : ""}`}
+                  onClick={() => setCurrentPage(index + 1)}
+                  type="button"
+                >
+                  {index + 1}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

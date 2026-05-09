@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import api from "../api";
 
 function LoginPage() {
@@ -40,7 +41,7 @@ function LoginPage() {
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
 
-      alert("Login Success");
+      toast.success("Login Success");
 
       if (role === "ADMIN") {
 
@@ -55,14 +56,14 @@ function LoginPage() {
 
       console.log(error);
 
-      alert("Login Failed");
+      toast.error("Login Failed");
     }
   };
 
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h2 className="form-title">Welcome Back</h2>
+        <h2 className="form-title">ACCESS GOVERNANCE MANAGER</h2>
         <p className="form-subtitle">
           Sign in to manage access requests and review governance activity.
         </p>

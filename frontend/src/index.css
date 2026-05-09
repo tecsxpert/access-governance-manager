@@ -173,6 +173,7 @@ p {
 
 .app-navbar h2 {
   font-size: 1.1rem;
+  color: #bfdbfe;
 }
 
 .navbar-actions {
@@ -202,6 +203,56 @@ p {
     gap: 16px;
     margin-bottom: 24px;
     align-items: center;
+  }
+
+  .role-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    border-radius: 999px;
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .role-admin {
+    background: linear-gradient(135deg, #e11d48, #f97316);
+  }
+
+  .role-user {
+    background: linear-gradient(135deg, #2563eb, #14b8a6);
+  }
+
+  .pagination-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-end;
+    padding: 16px 20px;
+  }
+
+  .pagination-button {
+    min-width: 42px;
+    padding: 10px 14px;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 12px;
+    background: #fff;
+    color: #1f2937;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .pagination-button:hover {
+    background: #eef2ff;
+  }
+
+  .pagination-button.active {
+    border-color: #7c3aed;
+    background: #7c3aed;
+    color: #fff;
   }
 
   .info-card {
